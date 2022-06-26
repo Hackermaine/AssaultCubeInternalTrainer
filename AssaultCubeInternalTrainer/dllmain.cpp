@@ -5,19 +5,19 @@
 #include "mem.h"
 #include "proc.h"
 
-
-
-// Created with ReClass.NET 1.2 by KN4CK3R
+//Define Vector as a 3-part function to represent Vec3 structs
 struct Vector3 { 
     float x, y, z;
 
 };
 
+//Special padding functions to make the offsets more resilient to updates
 #define STR_MERGE_IMPL(a, b) a##b
 #define STR_MERGE(a, b) STR_MERGE_IMPL(a, b)
 #define MAKE_PAD(size) STR_MERGE(_pad, __COUNTER__)[size]
 #define DEFINE_MEMBER_N(type, name, offset) struct {unsigned char MAKE_PAD(offset); type name;}
 
+//Weapon class with a pointer to the ammo in the currentWeapon's magazine
 class weapon
 {
 public:
@@ -26,7 +26,7 @@ public:
     };
 };
 
-
+//Playerent class defining offsets to different variables we may use
 class Playerent
 {
 public:
@@ -40,25 +40,28 @@ public:
         DEFINE_MEMBER_N(Vector3, headPitchYaw, 0x40);
     };
 
-}; //Size: 0x0378
+};
 
 
 DWORD WINAPI HackThread(HMODULE hModule) {
-    //Create a console
+    //Create a console for debugging (optional)
+    //Useful for seeing if injection, writes, and freezes were successful
+
     AllocConsole();
     FILE* f;
     freopen_s(&f, "Conout$", "w", stdout);
 
     std::cout << "Look the Console Works!\n";
 
-    //get module base
+    //Get a HANDLE to the base address of the module, in our case, the Assault Cube executable
     uintptr_t moduleBase = (uintptr_t)GetModuleHandle(L"ac_client.exe");
 
+    //setting all hacks to false before definition
     bool bHealth = false, bAmmo = false, bRecoil = false;
 
-    //Hack loop
+    //Hack loop, setting Hack definitions to keys
     while (true) {
-        //Get key input
+        //Get key input (could I just do a switch case statement for this???)
         if (GetAsyncKeyState(VK_END) & 1) {
             break;
 
@@ -71,6 +74,7 @@ DWORD WINAPI HackThread(HMODULE hModule) {
             bAmmo = !bAmmo;
 
         }
+        //Notice our Recoil function is defined inside of its own logic since we are just patching and Nopping bytes
         if (GetAsyncKeyState(VK_NUMPAD3) & 1) {
             bRecoil = !bRecoil;
 
@@ -85,6 +89,9 @@ DWORD WINAPI HackThread(HMODULE hModule) {
 
             }
         }
+        //Notice our health and ammo functions are defined outside of our key definitions
+        //This is because we need to define the Address of the player object and dereference the values we need
+
         //Continuous write/Freeze
         Playerent* localPlayer = *(Playerent**)(moduleBase + 0x10f4f4);
 
